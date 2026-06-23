@@ -80,7 +80,7 @@ function inferSourceType(sourceLine: string, title: string, content: string): No
 
   // 1. 来源行/标题中的强关键词
   if (/大会|会议|沙龙|活动|ted|论坛|讲座|演讲|峰会|展览/.test(combined)) return 'activity';
-  if (/教授|专家|顾问|作者|记者|研究员|战略|博士/.test(combined)) return 'article';
+  if (/教授|专家|顾问|作者|记者|研究员|战略|博士|院长|主任|总编|主编/.test(combined)) return 'article';
 
   // 2. 标题特征识别书籍
   //    - 书名号《》
@@ -93,8 +93,10 @@ function inferSourceType(sourceLine: string, title: string, content: string): No
   const contentPreview = content.substring(0, 500);
   //    - 有明确章节标记（一、二、三...）
   if (/^[一二三四五六七八九十]+、/m.test(content)) {
-    // 有章节 + 内容较长 = 可能是书籍笔记或文章
-    if (content.length > 500) return 'book';
+    // 有来源行的情况下，有章节标记更可能是文章而非书籍
+    if (sourceLine) return 'article';
+    // 无来源行 + 有章节 + 内容较长 = 可能是书籍笔记或文章
+    if (content.length > 500) return 'article';
     return 'article';
   }
   //    - 纯感想/随想特征（短句、个人语气）
@@ -150,10 +152,13 @@ export function parseNoteText(text: string, fileName?: string): ParsedNote {
     // 如果第三行较短（< 60字）且包含作者/来源特征，视为来源行
     const isSourceLine = thirdLine.length > 0 &&
       thirdLine.length < 60 &&
-      !/[。？！：:；;，,]/.test(thirdLine) && // 排除含标点符号的内容行
-      (/[|｜]/.test(thirdLine) ||
-       /教授|专家|顾问|作者|记者|研究员|博士|先生|女士/.test(thirdLine) ||
-       /^[\u4e00-\u9fa5a-zA-Z\s·|｜]+$/.test(thirdLine));
+      // 优先匹配「作者：xxx」「来源：xxx」等显式前缀格式
+      (/^(作者|来源|出处|记者|编辑|撰稿|文|图)[：:]/.test(thirdLine) ||
+       // 其他情况排除句末标点，但允许冒号和逗号（用于分隔作者信息）
+       (!/[。？！]/.test(thirdLine) &&
+        (/[|｜]/.test(thirdLine) ||
+         /教授|专家|顾问|作者|记者|研究员|博士|先生|女士|院长|主任|总编|主编/.test(thirdLine) ||
+         /^[\u4e00-\u9fa5a-zA-Z\s·|｜：:，,、]+$/ .test(thirdLine))));
 
     if (isSourceLine) {
       sourceName = cleanSourceName(thirdLine);

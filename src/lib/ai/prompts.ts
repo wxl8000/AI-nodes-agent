@@ -222,18 +222,58 @@ ${notes.map(n => `【${n.title}】\n${n.content.substring(0, 300)}`).join('\n\n'
   ]
 }`;
 
-export const WEEKLY_BRIEF_PROMPT = (notes: { title: string; content: string; created_at: string }[]) => `
-基于本周的笔记，生成一份思想简报。
+export const MONTHLY_BRIEF_PROMPT = (notes: { title: string; content: string; created_at: string; source_type: string }[], monthLabel: string) => `
+基于本月的笔记，生成一份月度思想简报。
 
-本周笔记：
-${notes.map(n => `【${n.title}】(${n.created_at})\n${n.content.substring(0, 200)}`).join('\n\n')}
+月份：${monthLabel}
 
-请以 JSON 格式返回：
+本月笔记：
+${notes.map(n => `【${n.title}】(${n.created_at}) [${n.source_type}]\n${n.content.substring(0, 300)}`).join('\n\n')}
+
+请从以下多个维度进行深度分析，并以 JSON 格式返回：
 {
-  "insights": ["核心洞察1", "核心洞察2", "核心洞察3"],
-  "question": "一个值得继续追问的问题",
-  "highlights": ["本周亮点1", "亮点2"]
-}`;
+  "core_insights": ["3-5 条月度核心洞察，每条要有深度和独特视角"],
+  "thinking_trends": [
+    {
+      "dimension": "维度标识(如 rational_vs_emotional)",
+      "label": "维度名称",
+      "start_score": 月初估值(0-100),
+      "end_score": 月末估值(0-100),
+      "direction": "up" | "down" | "stable",
+      "description": "变化描述和原因分析"
+    }
+  ],
+  "knowledge_distribution": [
+    {
+      "domain": "知识领域名称",
+      "percentage": 占比(0-100),
+      "note_count": 相关笔记数
+    }
+  ],
+  "growth_milestones": [
+    {
+      "date": "日期",
+      "title": "里程碑标题",
+      "description": "成长描述",
+      "type": "breakthrough" | "consolidation" | "exploration"
+    }
+  ],
+  "next_month_suggestions": ["3 条下月思考方向建议，具体可执行"],
+  "question": "一个值得继续深入追问的核心问题",
+  "highlights": ["2-3 条月度亮点"],
+  "stats": {
+    "total_notes": 本月笔记总数,
+    "total_keywords": 关键词总数,
+    "active_days": 活跃天数,
+    "top_source_type": "最多的笔记来源类型"
+  }
+}
+
+分析要求：
+- thinking_trends 重点关注六维认知变化：理性vs感性、抽象vs具象、批判vs接纳、宏观vs细节、长期vs即时、向内vs向外
+- knowledge_distribution 识别本月涉猎的知识领域及其占比，至少列出 3-5 个领域
+- growth_milestones 捕捉本月最具代表性的认知突破、知识巩固或新领域开拓时刻
+- next_month_suggestions 应基于本月分析给出具体、可执行的思考方向`;
 
 export const GOLDEN_QUOTES_PROMPT = (notes: { id: string; title: string; content: string }[]) => `
 从以下每篇笔记中提取最有洞见、最凝练的句子，作为个人金句集。
@@ -261,3 +301,40 @@ ${notes.map(n => `【${n.title}】\n${n.content}`).join('\n\n')}
 
 评分标准：洞见深度、表达凝练度、独特性
 重要：每条金句的 note_title 必须严格对应上述笔记中的某一篇标题，确保每篇笔记都有对应的金句输出`;
+
+export const EXTRACT_PRACTICE_INTENTS = (
+  content: string,
+  sourceName: string,
+  noteTitle: string,
+  createdAt: string
+) => `
+分析以下笔记内容，识别其中表达的实践意图。
+
+实践意图是指用户在笔记中表达的想要在未来尝试、实践、应用某个方法、理念或行为的意愿。
+
+常见表达模式：
+- 直接表达："这个方法我要试试"、"准备尝试一下"、"要实践一下"
+- 计划表达："下次用一下"、"以后要这样做"、"准备开始"
+- 期待表达："想试试看"、"应该去体验一下"、"值得一试"
+- 行动表达："从今天开始"、"我要开始做"、"决定尝试"
+
+笔记标题：${noteTitle}
+来源：${sourceName}
+日期：${createdAt}
+内容：
+"""
+${content}
+"""
+
+如果笔记中没有任何实践意图，请返回空数组。
+如果存在多个实践意图，每个都单独提取。
+
+请以 JSON 格式返回：
+{
+  "intentions": [
+    {
+      "intention_text": "笔记中表达实践意图的原文句子或片段",
+      "description": "用一句话概括这个实践目标是什么，包含具体方法和场景"
+    }
+  ]
+}`;

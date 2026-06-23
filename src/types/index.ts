@@ -44,10 +44,11 @@ export type AnalysisType =
   | 'emotion_spectrum'
   | 'concept_network'
   | 'book_recommendation'
-  | 'weekly_brief'
+  | 'monthly_brief'
   | 'golden_quotes'
   | 'blind_spot'
-  | 'devil_advocate';
+  | 'devil_advocate'
+  | 'practice_intent';
 
 export interface AnalysisResult {
   id: string;
@@ -168,15 +169,50 @@ export interface ConceptEdge {
   relation: string;
 }
 
-// ========== 周报 ==========
+// ========== 月报 ==========
 
-export interface WeeklyBrief {
+export interface MonthlyBriefStats {
+  total_notes: number;
+  total_keywords: number;
+  active_days: number;
+  top_source_type: string;
+}
+
+export interface ThinkingTrend {
+  dimension: string;
+  label: string;
+  start_score: number;
+  end_score: number;
+  direction: 'up' | 'down' | 'stable';
+  description: string;
+}
+
+export interface KnowledgeDistribution {
+  domain: string;
+  percentage: number;
+  note_count: number;
+}
+
+export interface GrowthMilestone {
+  date: string;
+  title: string;
+  description: string;
+  type: 'breakthrough' | 'consolidation' | 'exploration';
+}
+
+export interface MonthlyBrief {
   id: string;
-  week_start: string;
-  week_end: string;
-  insights: string[];
+  month_label: string;
+  month_start: string;
+  month_end: string;
+  core_insights: string[];
+  thinking_trends: ThinkingTrend[];
+  knowledge_distribution: KnowledgeDistribution[];
+  growth_milestones: GrowthMilestone[];
+  next_month_suggestions: string[];
   question: string;
   highlights: string[];
+  stats: MonthlyBriefStats;
   created_at: string;
 }
 
@@ -214,4 +250,20 @@ export interface AIConfig {
   apiKey: string;
   model?: string;
   baseUrl?: string;
+}
+
+// ========== 实践目标 ==========
+
+export interface PracticeGoal {
+  id: string;
+  note_id: string;
+  note_title: string;
+  source_name: string;
+  intention_text: string;
+  description: string;
+  status: 'pending' | 'reminded' | 'done' | 'deferred' | 'ignored';
+  remind_at: string;
+  created_at: string;
+  updated_at: string;
+  deferred_count: number;
 }

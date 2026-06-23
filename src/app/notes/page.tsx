@@ -5,11 +5,12 @@ import { useSearchParams } from 'next/navigation';
 import {
   Plus, BookOpen, Calendar, Tag, Search, FileText,
   Upload, FileUp, CheckCircle2, XCircle, Loader2,
-  PenLine, Lightbulb, X, Trash2, Briefcase, Sparkles,
+  PenLine, Lightbulb, X, Trash2, Briefcase, Sparkles, Pencil, Download, ChevronDown,
+  Target, Clock,
 } from 'lucide-react';
 import { mockNotes } from '@/lib/mock/data';
 import { cn } from '@/lib/utils';
-import type { Note } from '@/types';
+import type { Note, PracticeGoal } from '@/types';
 
 // 来源类型图标和颜色配置
 const SOURCE_CONFIG = {
@@ -42,6 +43,10 @@ export default function NotesPage() {
   const [importResults, setImportResults] = useState<ImportResult[] | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [noteGoals, setNoteGoals] = useState<PracticeGoal[]>([]);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -72,6 +77,19 @@ export default function NotesPage() {
 
   useEffect(() => { fetchNotes(); }, [fetchNotes]);
 
+  // 点击外部关闭导出菜单
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showExportMenu]);
+
   // 根据 URL 参数 noteId 自动选中对应笔记
   useEffect(() => {
     const noteId = searchParams.get('noteId');
@@ -80,6 +98,38 @@ export default function NotesPage() {
       if (target) setSelectedNote(target);
     }
   }, [notes, searchParams]);
+
+  // 当选中笔记变化时，获取关联的实践目标
+  useEffect(() => {
+    if (!selectedNote) {
+      setNoteGoals([]);
+      return;
+    }
+    fetch(`/api/practice-goals?note_id=${selectedNote.id}`)
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && json.data) setNoteGoals(json.data);
+        else setNoteGoals([]);
+      })
+      .catch(() => setNoteGoals([]));
+  }, [selectedNote?.id]);
+
+  // 更新实践目标状态
+  const handleGoalAction = async (goalId: string, status: 'done' | 'deferred' | 'ignored') => {
+    try {
+      const res = await fetch('/api/practice-goals', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: goalId, status }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setNoteGoals(prev => prev.map(g =>
+          g.id === goalId ? { ...g, status } : g
+        ));
+      }
+    } catch { /* 静默失败 */ }
+  };
 
   // 过滤笔记
   const filteredNotes = notes.filter((note) => {
@@ -189,6 +239,30 @@ export default function NotesPage() {
     }
   };
 
+  // 修改笔记来源类型
+  const handleChangeSourceType = async (noteId: string, newType: Note['source_type']) => {
+    try {
+      const res = await fetch('/api/notes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: noteId, source_type: newType }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setNotes(notes.map(n => n.id === noteId ? { ...n, source_type: newType } : n));
+        if (selectedNote?.id === noteId) {
+          setSelectedNote({ ...selectedNote, source_type: newType });
+        }
+      }
+    } catch {
+      // fallback: 本地更新
+      setNotes(notes.map(n => n.id === noteId ? { ...n, source_type: newType } : n));
+      if (selectedNote?.id === noteId) {
+        setSelectedNote({ ...selectedNote, source_type: newType });
+      }
+    }
+  };
+
   // AI 分析全部笔记
   const handleAnalyzeAll = async () => {
     setAnalyzing(true);
@@ -239,6 +313,31 @@ export default function NotesPage() {
     }
   };
 
+  // 导出单条笔记
+  const handleExportSingle = (note: Note) => {
+    window.open(`/api/notes/export?id=${note.id}`, '_blank');
+  };
+
+  // 批量导出（全部或筛选后的笔记）
+  const handleExportBatch = async (noteIds?: string[]) => {
+    setExporting(true);
+    try {
+      const url = noteIds && noteIds.length > 0
+        ? `/api/notes/export?ids=${noteIds.join(',')}`
+        : '/api/notes/export';
+      // 通过创建 a 标签触发下载
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      setExporting(false);
+      setShowExportMenu(false);
+    }
+  };
+
   // 格式化日期
   const formatDate = (dateStr: string) => {
     try {
@@ -276,6 +375,50 @@ export default function NotesPage() {
             {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {analyzing ? '分析中...' : 'AI 分析全部'}
           </button>
+          {/* 导出按钮 */}
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={exporting || notes.length === 0}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent-blue hover:bg-accent-blue/80 text-white text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              导出
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 top-full mt-2 z-30 bg-card border border-card-border rounded-xl shadow-xl py-1.5 min-w-[180px]">
+                <button
+                  onClick={() => handleExportBatch()}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground/80 hover:bg-primary/10 transition-colors"
+                >
+                  <FileText className="w-4 h-4 text-accent-blue" />
+                  导出全部笔记
+                  <span className="text-xs text-muted ml-auto">ZIP</span>
+                </button>
+                {filteredNotes.length > 0 && filteredNotes.length !== notes.length && (
+                  <button
+                    onClick={() => handleExportBatch(filteredNotes.map(n => n.id))}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground/80 hover:bg-primary/10 transition-colors"
+                  >
+                    <FileText className="w-4 h-4 text-accent-green" />
+                    导出筛选结果
+                    <span className="text-xs text-muted ml-auto">{filteredNotes.length}条</span>
+                  </button>
+                )}
+                {selectedNote && (
+                  <button
+                    onClick={() => { handleExportSingle(selectedNote); setShowExportMenu(false); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground/80 hover:bg-primary/10 transition-colors"
+                  >
+                    <FileText className="w-4 h-4 text-accent-orange" />
+                    导出当前笔记
+                    <span className="text-xs text-muted ml-auto truncate max-w-[80px]">{selectedNote.title}</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={importing}
@@ -558,6 +701,45 @@ export default function NotesPage() {
                   <h2 className="text-lg font-semibold truncate">{selectedNote.title}</h2>
                   <p className="text-xs text-muted">{selectedNote.source_name} · {formatDate(selectedNote.created_at)}</p>
                 </div>
+                {/* 来源类型切换 */}
+                <div className="relative group/type">
+                  <button
+                    className={cn(
+                      'flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border transition-colors cursor-pointer',
+                      'border-card-border/50 hover:border-primary/50 hover:bg-primary/5'
+                    )}
+                    title="点击修改来源类型"
+                  >
+                    <Pencil className="w-3 h-3 text-muted" />
+                    {SOURCE_CONFIG[selectedNote.source_type]?.label || '未知'}
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 z-20 hidden group-hover/type:block">
+                    <div className="bg-card border border-card-border rounded-lg shadow-xl py-1 min-w-[100px]">
+                      {(Object.entries(SOURCE_CONFIG) as [Note['source_type'], typeof SOURCE_CONFIG.book][]).map(([key, cfg]) => {
+                        const TypeIcon = cfg.icon;
+                        return (
+                          <button
+                            key={key}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (selectedNote.source_type !== key) {
+                                handleChangeSourceType(selectedNote.id, key);
+                              }
+                            }}
+                            className={cn(
+                              'w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors hover:bg-primary/10',
+                              selectedNote.source_type === key ? 'text-primary font-medium' : 'text-foreground/80'
+                            )}
+                          >
+                            <TypeIcon className={cn('w-3.5 h-3.5', cfg.color)} />
+                            {cfg.label}
+                            {selectedNote.source_type === key && <CheckCircle2 className="w-3 h-3 ml-auto text-primary" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
                 <span className={cn(
                   'text-[10px] px-2 py-1 rounded-full',
                   selectedNote.analysis_status === 'completed'
@@ -570,6 +752,13 @@ export default function NotesPage() {
                    selectedNote.analysis_status === 'analyzing' ? '分析中' :
                    selectedNote.analysis_status === 'failed' ? '失败' : '待分析'}
                 </span>
+                <button
+                  onClick={() => handleExportSingle(selectedNote)}
+                  className="p-2 rounded-lg hover:bg-accent-blue/15 text-muted hover:text-accent-blue transition-colors"
+                  title="导出为 TXT"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
                 <button
                   onClick={() => handleDeleteNote(selectedNote.id)}
                   className="p-2 rounded-lg hover:bg-red-500/15 text-muted hover:text-red-400 transition-colors"
@@ -607,6 +796,70 @@ export default function NotesPage() {
                   );
                 })}
               </div>
+
+              {/* 关联实践目标 */}
+              {noteGoals.length > 0 && (
+                <div className="mt-6 pt-5 border-t border-card-border/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="w-4 h-4 text-accent-orange" />
+                    <h4 className="text-sm font-semibold">实践跟踪</h4>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-accent-orange/15 text-accent-orange">
+                      {noteGoals.filter(g => g.status === 'pending' || g.status === 'reminded').length} 待实践
+                    </span>
+                  </div>
+                  <div className="space-y-2.5">
+                    {noteGoals.map((goal) => {
+                      const statusConfig = {
+                        pending:    { label: '待实践', color: 'bg-accent-orange/15 text-accent-orange', icon: Target },
+                        reminded:   { label: '已提醒', color: 'bg-accent-blue/15 text-accent-blue', icon: Clock },
+                        done:       { label: '已完成', color: 'bg-accent-green/15 text-accent-green', icon: CheckCircle2 },
+                        deferred:   { label: '已延期', color: 'bg-accent-purple/15 text-accent-purple', icon: Clock },
+                        ignored:    { label: '已忽略', color: 'bg-secondary/50 text-muted', icon: XCircle },
+                      };
+                      const cfg = statusConfig[goal.status] || statusConfig.pending;
+                      const StatusIcon = cfg.icon;
+                      return (
+                        <div key={goal.id} className="p-3 rounded-lg bg-secondary/20 border border-card-border/30">
+                          <div className="flex items-start gap-2.5">
+                            <StatusIcon className={cn('w-4 h-4 mt-0.5 shrink-0', cfg.color.split(' ')[1])} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-foreground/80 leading-relaxed mb-1">
+                                {goal.intention_text}
+                              </p>
+                              <p className="text-[10px] text-muted">{goal.description}</p>
+                            </div>
+                            <span className={cn('text-[10px] px-2 py-0.5 rounded-full shrink-0', cfg.color)}>
+                              {cfg.label}
+                            </span>
+                          </div>
+                          {(goal.status === 'pending' || goal.status === 'reminded') && (
+                            <div className="flex gap-2 mt-2.5 ml-6">
+                              <button
+                                onClick={() => handleGoalAction(goal.id, 'done')}
+                                className="text-[10px] px-2 py-1 rounded-md bg-accent-green/10 text-accent-green hover:bg-accent-green/20 transition-colors"
+                              >
+                                标记完成
+                              </button>
+                              <button
+                                onClick={() => handleGoalAction(goal.id, 'deferred')}
+                                className="text-[10px] px-2 py-1 rounded-md bg-accent-blue/10 text-accent-blue hover:bg-accent-blue/20 transition-colors"
+                              >
+                                延期
+                              </button>
+                              <button
+                                onClick={() => handleGoalAction(goal.id, 'ignored')}
+                                className="text-[10px] px-2 py-1 rounded-md bg-secondary/50 text-muted hover:bg-secondary transition-colors"
+                              >
+                                忽略
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-muted">

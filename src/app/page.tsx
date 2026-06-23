@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, PenLine, Brain, TrendingUp, Lightbulb, Sparkles, Briefcase, Calendar, Loader2 } from 'lucide-react';
+import { BookOpen, PenLine, Brain, TrendingUp, Lightbulb, Sparkles, Briefcase, Calendar, Loader2, Bell, CheckCircle2, Clock, XCircle, Target, Filter } from 'lucide-react';
 import Link from 'next/link';
 import { mockNotes, mockThinkingStyle } from '@/lib/mock/data';
-import type { Note } from '@/types';
+import { cn } from '@/lib/utils';
+import type { Note, PracticeGoal } from '@/types';
 
 const SOURCE_LABELS: Record<string, string> = {
   book: '📚 书籍',
@@ -33,12 +34,17 @@ export default function DashboardPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [goldenQuoteCount, setGoldenQuoteCount] = useState<number>(0);
+  const [overdueGoals, setOverdueGoals] = useState<PracticeGoal[]>([]);
+  const [allGoals, setAllGoals] = useState<PracticeGoal[]>([]);
+  const [goalFilter, setGoalFilter] = useState<string>('all');
 
   useEffect(() => {
     Promise.all([
       fetch('/api/notes').then(res => res.json()).catch(() => null),
       fetch('/api/analysis').then(res => res.json()).catch(() => null),
-    ]).then(([notesJson, analysisJson]) => {
+      fetch('/api/practice-goals?overdue=true').then(res => res.json()).catch(() => null),
+      fetch('/api/practice-goals').then(res => res.json()).catch(() => null),
+    ]).then(([notesJson, analysisJson, overdueJson, allGoalsJson]) => {
       // Notes
       if (notesJson?.success && notesJson.data?.length > 0) {
         setNotes(notesJson.data);
@@ -49,8 +55,44 @@ export default function DashboardPage() {
       if (analysisJson?.success && analysisJson.data?.golden_quotes?.length > 0) {
         setGoldenQuoteCount(analysisJson.data.golden_quotes.length);
       }
+      // Overdue practice goals
+      if (overdueJson?.success && overdueJson.data?.length > 0) {
+        setOverdueGoals(overdueJson.data);
+      }
+      // All practice goals
+      if (allGoalsJson?.success && allGoalsJson.data) {
+        setAllGoals(allGoalsJson.data);
+      }
     }).finally(() => setLoading(false));
   }, []);
+
+  // 更新实践目标状态
+  const handleGoalAction = async (goalId: string, status: 'done' | 'deferred' | 'ignored') => {
+    try {
+      const res = await fetch('/api/practice-goals', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: goalId, status }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setOverdueGoals(prev => prev.filter(g => g.id !== goalId));
+        setAllGoals(prev => prev.map(g =>
+          g.id === goalId ? { ...g, status } : g
+        ));
+      }
+    } catch {
+      // 静默失败，刷新页面后会重新显示
+    }
+  };
+
+  // 计算时间间隔描述
+  const getTimeAgo = (dateStr: string) => {
+    const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+    if (days < 30) return `${days}天前`;
+    if (days < 90) return `${Math.floor(days / 30)}个月前`;
+    return `${Math.floor(days / 365 * 10) / 10}年前`;
+  };
 
   const stats = [
     { label: '总笔记数', value: notes.length, icon: PenLine, color: 'from-accent-blue to-accent-purple', href: '/notes' },
@@ -121,6 +163,196 @@ export default function DashboardPage() {
           })}
         </div>
       </div>
+
+      {/* 实践提醒 */}
+      {overdueGoals.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Bell className="w-5 h-5 text-accent-orange" />
+            <h2 className="text-lg font-semibold">实践提醒</h2>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-accent-orange/15 text-accent-orange">
+              {overdueGoals.length} 条待处理
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {overdueGoals.slice(0, 4).map((goal) => (
+              <div
+                key={goal.id}
+                className="glass-card p-5 border-l-4 border-l-accent-orange transition-all hover:border-l-primary"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-accent-orange/15 flex items-center justify-center shrink-0">
+                    <Bell className="w-4 h-4 text-accent-orange" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-snug mb-1">
+                      {goal.description}
+                    </p>
+                    <p className="text-xs text-muted mb-1 line-clamp-2">
+                      &ldquo;{goal.intention_text}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted">
+                      <span>《{goal.source_name}》</span>
+                      <span>·</span>
+                      <span>{getTimeAgo(goal.created_at)}记录</span>
+                      {goal.deferred_count > 0 && (
+                        <span className="text-accent-orange">· 已延期{goal.deferred_count}次</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => handleGoalAction(goal.id, 'done')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-green/15 text-accent-green text-xs font-medium hover:bg-accent-green/25 transition-colors"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    已完成
+                  </button>
+                  <button
+                    onClick={() => handleGoalAction(goal.id, 'deferred')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-blue/15 text-accent-blue text-xs font-medium hover:bg-accent-blue/25 transition-colors"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    延期 30 天
+                  </button>
+                  <button
+                    onClick={() => handleGoalAction(goal.id, 'ignored')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 text-muted text-xs font-medium hover:bg-secondary transition-colors"
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                    忽略
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 实践目标总览 */}
+      {allGoals.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="w-5 h-5 text-accent-purple" />
+            <h2 className="text-lg font-semibold">实践目标总览</h2>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-accent-purple/15 text-accent-purple">
+              {allGoals.length} 个目标
+            </span>
+          </div>
+          {/* 筛选标签 */}
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="w-3.5 h-3.5 text-muted" />
+            {[
+              { key: 'all', label: '全部' },
+              { key: 'pending', label: '待实践' },
+              { key: 'done', label: '已完成' },
+              { key: 'deferred', label: '已延期' },
+              { key: 'ignored', label: '已忽略' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setGoalFilter(tab.key)}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                  goalFilter === tab.key
+                    ? 'bg-primary text-white'
+                    : 'bg-card border border-card-border text-muted hover:text-foreground'
+                )}
+              >
+                {tab.label}
+                {tab.key !== 'all' && (
+                  <span className="ml-1 opacity-70">
+                    ({allGoals.filter(g => g.status === tab.key).length})
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          {/* 目标列表 */}
+          <div className="grid grid-cols-2 gap-4">
+            {(goalFilter === 'all' ? allGoals : allGoals.filter(g => g.status === goalFilter)).slice(0, 8).map((goal) => {
+              const statusConfig: Record<string, { label: string; color: string; bg: string; icon: typeof Target }> = {
+                pending:   { label: '待实践', color: 'text-accent-orange', bg: 'bg-accent-orange/15', icon: Target },
+                reminded:  { label: '已提醒', color: 'text-accent-blue',   bg: 'bg-accent-blue/15',   icon: Bell },
+                done:      { label: '已完成', color: 'text-accent-green',  bg: 'bg-accent-green/15',  icon: CheckCircle2 },
+                deferred:  { label: '已延期', color: 'text-accent-purple', bg: 'bg-accent-purple/15', icon: Clock },
+                ignored:   { label: '已忽略', color: 'text-muted',         bg: 'bg-secondary/50',     icon: XCircle },
+              };
+              const cfg = statusConfig[goal.status] || statusConfig.pending;
+              const StatusIcon = cfg.icon;
+              const isOverdue = (goal.status === 'pending' || goal.status === 'reminded') &&
+                Math.floor((Date.now() - new Date(goal.created_at).getTime()) / (1000 * 60 * 60 * 24)) > 60;
+
+              return (
+                <div
+                  key={goal.id}
+                  className={cn(
+                    'glass-card p-5 transition-all',
+                    isOverdue && 'border-l-4 border-l-accent-orange'
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', cfg.bg)}>
+                      <StatusIcon className={cn('w-4 h-4', cfg.color)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-snug mb-1">
+                        {goal.description}
+                      </p>
+                      <p className="text-xs text-muted mb-1 line-clamp-2">
+                        &ldquo;{goal.intention_text}&rdquo;
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted flex-wrap">
+                        <span className={cn('px-2 py-0.5 rounded-full', cfg.bg, cfg.color)}>{cfg.label}</span>
+                        <span>《{goal.source_name}》</span>
+                        <span>·</span>
+                        <span>{getTimeAgo(goal.created_at)}</span>
+                        {goal.deferred_count > 0 && (
+                          <span className="text-accent-orange">· 延期{goal.deferred_count}次</span>
+                        )}
+                        {isOverdue && (
+                          <span className="text-accent-orange font-medium">· 已超期</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {(goal.status === 'pending' || goal.status === 'reminded') && (
+                    <div className="flex gap-2 mt-4 ml-11">
+                      <button
+                        onClick={() => handleGoalAction(goal.id, 'done')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-green/15 text-accent-green text-xs font-medium hover:bg-accent-green/25 transition-colors"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        已完成
+                      </button>
+                      <button
+                        onClick={() => handleGoalAction(goal.id, 'deferred')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-blue/15 text-accent-blue text-xs font-medium hover:bg-accent-blue/25 transition-colors"
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        延期
+                      </button>
+                      <button
+                        onClick={() => handleGoalAction(goal.id, 'ignored')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 text-muted text-xs font-medium hover:bg-secondary transition-colors"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        忽略
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {allGoals.filter(g => goalFilter === 'all' || g.status === goalFilter).length > 8 && (
+            <p className="text-center text-xs text-muted mt-3">
+              还有 {allGoals.filter(g => goalFilter === 'all' || g.status === goalFilter).length - 8} 个目标未显示
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Recent Notes & Thinking Style */}
       <div className="grid grid-cols-3 gap-6">

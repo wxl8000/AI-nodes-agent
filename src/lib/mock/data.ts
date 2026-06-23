@@ -10,7 +10,7 @@ import type {
   ConceptNode,
   ConceptEdge,
   GoldenQuote,
-  WeeklyBrief,
+  MonthlyBrief,
 } from '@/types';
 
 // ========== 模拟笔记 ==========
@@ -432,21 +432,119 @@ export const mockGoldenQuotes: GoldenQuote[] = [
   { id: 'q-8', text: '了解自己什么时候精力最好、什么场景最容易触发行为、什么样的奖励对你真正有效——这才是习惯方法论的共同前提。', source_note_id: 'note-2', source_note_title: '原子习惯', theme: '自我认知', score: 82 },
 ];
 
-// ========== 周报模拟数据 ==========
+// ========== 月报模拟数据 ==========
 
-export const mockWeeklyBrief: WeeklyBrief = {
-  id: 'brief-1',
-  week_start: '2025-06-09',
-  week_end: '2025-06-15',
-  insights: [
-    '理论与实践的闭环正在形成：创业复盘沙龙让你将《思考，快与慢》中的确认偏误理论在真实案例中得到了验证。',
-    '多元思维模型开始发挥作用：你正在不自觉地将不同书中的模型交叉使用，这是从"知识积累"到"知识整合"的重要跨越。',
-    '情感与理性的平衡成为新的探索方向：多篇笔记中反复出现这个主题，说明它正在成为你下一个需要深入思考的核心议题。',
+export const mockMonthlyBrief: MonthlyBrief = {
+  id: 'monthly-2025-06',
+  month_label: '2025年6月',
+  month_start: '2025-06-01',
+  month_end: '2025-06-30',
+  core_insights: [
+    '理论与实践的闭环正在加速形成：创业复盘沙龙和《思考，快与慢》读书笔记的深度交叉，让你在确认偏误、启发式判断等领域形成了立体化的理解，不再停留于单点知识。',
+    '多元思维模型从被动使用转向主动融合：本月多篇笔记中出现了跨模型交叉使用的迹象，这标志着从“知识积累”向“知识整合”的关键跨越。',
+    '情感与理性的平衡成为本月核心探索主题：至少在 4 篇笔记中反复出现“直觉”与“系统化”的对话，说明你正在无意识地拓展认知边界。',
+    '东方哲学视角的引入打破了原有西方理性框架：庄子哲学的引入让你开始质疑纯粹理性主义的局限，这是认知结构深层调整的信号。',
+    '输出能力显著增强：本月不仅笔记数量提升，更重要的是出现了更多具有原创观点的输出，而非仅仅是对他人观点的转述。',
   ],
-  question: '如何在保持系统化思维优势的同时，不失去对情感和直觉的敏感度？',
+  thinking_trends: [
+    {
+      dimension: 'rational_vs_emotional',
+      label: '理性 vs 感性',
+      start_score: 78,
+      end_score: 68,
+      direction: 'down',
+      description: '本月开始更多关注情感和直觉的价值，理性分析的主导地位有所松动，这是认知成熟的表现。',
+    },
+    {
+      dimension: 'abstract_vs_concrete',
+      label: '抽象 vs 具象',
+      start_score: 72,
+      end_score: 75,
+      direction: 'up',
+      description: '抽象思辨能力稳步提升，更善于从具体案例中提炼普适规律。',
+    },
+    {
+      dimension: 'critical_vs_accepting',
+      label: '批判 vs 接纳',
+      start_score: 65,
+      end_score: 60,
+      direction: 'down',
+      description: '对新观点的接纳度提高，尤其在接触东方哲学后，对“非理性”的包容度增强。',
+    },
+    {
+      dimension: 'macro_vs_detail',
+      label: '宏观 vs 细节',
+      start_score: 70,
+      end_score: 72,
+      direction: 'stable',
+      description: '宏观格局意识保持稳定，既有全局视角，也不忽视关键细节。',
+    },
+    {
+      dimension: 'longterm_vs_instant',
+      label: '长期 vs 即时',
+      start_score: 80,
+      end_score: 82,
+      direction: 'up',
+      description: '长期主义倾向进一步增强，本月笔记中出现了更多关于“复利”“系统积累”的思考。',
+    },
+    {
+      dimension: 'inward_vs_outward',
+      label: '向内 vs 向外',
+      start_score: 62,
+      end_score: 67,
+      direction: 'up',
+      description: '向内探索的趋势明显增强，更多自我反思和元认知的内容出现。',
+    },
+  ],
+  knowledge_distribution: [
+    { domain: '认知科学', percentage: 28, note_count: 5 },
+    { domain: '创业与商业', percentage: 22, note_count: 4 },
+    { domain: '哲学与人生', percentage: 20, note_count: 3 },
+    { domain: '自我管理', percentage: 17, note_count: 3 },
+    { domain: '技术与AI', percentage: 13, note_count: 2 },
+  ],
+  growth_milestones: [
+    {
+      date: '2025-06-05',
+      title: '首次系统化反思“理性至上”的局限',
+      description: '在《思考，快与慢》笔记中，第一次明确质疑自己过度依赖系统2思维的倾向。',
+      type: 'breakthrough',
+    },
+    {
+      date: '2025-06-12',
+      title: '将创业实战经验与认知理论建立连接',
+      description: '在创业复盘沙龙后，将确认偏误理论与自身创业决策案例深度结合，完成了理论-实践闭环。',
+      type: 'consolidation',
+    },
+    {
+      date: '2025-06-20',
+      title: '开拓东方哲学认知领域',
+      description: '首次将庄子哲学引入对社会话题的讨论，突破了以往纯西方理性框架的思考模式。',
+      type: 'exploration',
+    },
+    {
+      date: '2025-06-26',
+      title: '形成个人知识管理方法论雏形',
+      description: '在本月末的笔记中，首次系统性地描述了自己的知识管理流程，标志着从碎片学习向体系化转变。',
+      type: 'breakthrough',
+    },
+  ],
+  next_month_suggestions: [
+    '尝试将“情感智慧”作为下月重点探索方向：阅读1本关于情绪管理或正念的书籍，弥补理性-感性平衡的短板。',
+    '将创业复盘中的认知规律整理成文章输出：你的理论-实践闭环已经形成，现在是将其固化为原创方法论的好时机。',
+    '探索跨文化认知差异：已有东方哲学的初步接触，下月可以比较中西思维模型的根本差异，拓展认知宽度。',
+  ],
+  question: '如何在保持系统化思维优势的同时，不失去对情感和直觉的敏感度？当你的认知体系越来越完善时，如何确保它不变成一个封闭系统？',
   highlights: [
-    '本周笔记产出量较上周增长 40%',
-    '首次将哲学视角（庄子）引入社会话题讨论',
+    '本月笔记产出量达 17 篇，较上月增长 42%，质量同步提升',
+    '首次将哲学视角（庄子）引入社会话题讨论，实现了跨文化思维碰撞',
+    '创业复盘与认知科学的双向赋能形成独特的个人方法论',
   ],
-  created_at: '2025-06-15',
+  stats: {
+    total_notes: 17,
+    total_keywords: 86,
+    active_days: 22,
+    top_source_type: '书籍',
+  },
+  created_at: '2025-06-30',
 };

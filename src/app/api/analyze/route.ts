@@ -10,6 +10,7 @@ import {
   ANALYZE_THINKING_STYLE,
   GOLDEN_QUOTES_PROMPT,
   BOOK_RECOMMENDATION_PROMPT,
+  EXTRACT_PRACTICE_INTENTS,
 } from '@/lib/ai/prompts';
 
 interface DbNote {
@@ -117,11 +118,12 @@ export async function POST(req: NextRequest) {
           await (supabase.from('notes') as any).update({ analysis_status: 'analyzing' }).eq('id', note.id);
 
           try {
-            // Parallel: cognitive_radar + word_cloud + milestone，每个调用独立容错
-            const [radarResult, wordCloudResult, milestoneResult] = await Promise.all([
+            // Parallel: cognitive_radar + word_cloud + milestone + practice_intents，每个调用独立容错
+            const [radarResult, wordCloudResult, milestoneResult, practiceIntentResult] = await Promise.all([
               callAI(ANALYZE_COGNITIVE_RADAR(note.content, note.source_name)).catch(() => null),
               callAI(ANALYZE_WORD_CLOUD(note.content, note.source_name)).catch(() => null),
               callAI(ANALYZE_MILESTONE(note.content, note.source_name, note.created_at)).catch(() => null),
+              callAI(EXTRACT_PRACTICE_INTENTS(note.content, note.source_name, note.title, note.created_at)).catch(() => null),
             ]);
 
             // 降级兜底：AI 调用失败时使用默认值而非标记 failed
@@ -185,6 +187,30 @@ export async function POST(req: NextRequest) {
                 note_title: note.title,
                 date: note.created_at,
               });
+            }
+
+            // 存储 AI 识别到的实践意图到 practice_goals 表
+            if (practiceIntentResult) {
+              const intentions = practiceIntentResult.intentions as
+                | { intention_text: string; description: string }[]
+                | undefined;
+              if (Array.isArray(intentions) && intentions.length > 0) {
+                for (const intent of intentions) {
+                  // 先删除同一笔记的旧实践意图，避免重复
+                  await (supabase.from('practice_goals') as any)
+                    .delete()
+                    .eq('note_id', note.id)
+                    .eq('intention_text', intent.intention_text);
+                  await (supabase.from('practice_goals') as any).insert({
+                    note_id: note.id,
+                    note_title: note.title,
+                    source_name: note.source_name,
+                    intention_text: intent.intention_text,
+                    description: intent.description,
+                    status: 'pending',
+                  });
+                }
+              }
             }
 
             // Mark as completed（含降级完成）
