@@ -2,6 +2,8 @@
 
 AI 笔记分析智能体 —— 基于 Next.js 的智能笔记管理与分析平台。
 
+> 本项目基于 Apache License 2.0 开源，详见 [LICENSE](LICENSE)。Copyright 2026 WXL8000。
+
 ## 环境要求
 
 | 工具 | 最低版本 | 说明 |
@@ -16,7 +18,7 @@ AI 笔记分析智能体 —— 基于 Next.js 的智能笔记管理与分析平
 ### 1. 克隆项目
 
 ```bash
-git clone https://gitee.com/<your-username>/AI-Nodes-agent.git
+git clone https://github.com/WXL8000/AI-nodes-agent.git
 cd AI-Nodes-agent
 ```
 
@@ -67,6 +69,7 @@ cp .env.example .env.local
 
 ```bash
 npm run dev
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass;npm run dev
 ```
 
 打开 [http://localhost:3000](http://localhost:3000) 查看应用。
@@ -122,80 +125,9 @@ src/
 ## 部署
 
 项目支持部署到 [Vercel](https://vercel.com)，详见 [Next.js 部署文档](https://nextjs.org/docs/app/building-your-application/deploying)。
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## License
 
-First, run the development server:
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-<<<<<<< HEAD
-# AI-Nodes-agent
-Nodes-agent
-=======
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
->>>>>>> ab30e3d (feat: AI-Nodes-agent project initial code)
+Copyright 2026 WXL8000. This product includes third-party components listed in [NOTICE](NOTICE).

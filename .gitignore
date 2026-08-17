@@ -40,3 +40,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# internal docs & tooling (not part of the open-source repo)
+源代码文档.txt
+说明书.txt
+_enc.py
+_writer.js
+_build.ps1
+generate-copyright-doc.js
+generate-final-doc.js
+generate_manual_docx.py
+verify_docx.py
+*.docx

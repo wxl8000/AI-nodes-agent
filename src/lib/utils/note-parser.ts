@@ -1,3 +1,17 @@
+// Copyright 2026 WXL8000
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /**
  * TXT 笔记解析工具
  * 解析格式：
@@ -80,14 +94,15 @@ function inferSourceType(sourceLine: string, title: string, content: string): No
 
   // 1. 来源行/标题中的强关键词
   if (/大会|会议|沙龙|活动|ted|论坛|讲座|演讲|峰会|展览/.test(combined)) return 'activity';
-  if (/教授|专家|顾问|作者|记者|研究员|战略|博士|院长|主任|总编|主编/.test(combined)) return 'article';
-
-  // 2. 标题特征识别书籍
+  
+  // 2. 标题特征识别书籍（优先于 article 关键词检查，避免"作者：xxx"触发 article 误判）
   //    - 书名号《》
-  //    - 标题含数字编号（如“变量4”“金融危机500年”）
+  //    - 标题含数字编号（如"变量4""金融危机500年"）
   //    - 标题像书名（短且无动词句式）
   if (/《.*》/.test(title)) return 'book';
   if (/\d+[年天]|^.{2,8}[-\u2014].{2,}/.test(title) && title.length < 30) return 'book';
+  
+  if (/教授|专家|顾问|作者|记者|研究员|战略|博士|院长|主任|总编|主编/.test(combined)) return 'article';
 
   // 3. 内容特征识别
   const contentPreview = content.substring(0, 500);

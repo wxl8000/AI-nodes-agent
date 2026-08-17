@@ -1,0 +1,38 @@
+AI-Nodes-agent
+Copyright 2026 WXL8000
+
+This product includes software developed under the Apache License 2.0.
+
+---------------------------------------------------------------------
+
+Third-party components
+
+This product bundles the following third-party components (runtime
+dependencies, installed via npm):
+
+  - Next.js 15 (https://nextjs.org) — MIT License
+  - React 19 / React DOM 19 (https://react.dev) — MIT License
+  - ECharts 6 (https://echarts.apache.org) — Apache License 2.0
+  - echarts-for-react 3 — MIT License
+  - @xyflow/react 12 (https://reactflow.dev) — MIT License
+  - framer-motion 12 (https://www.framer.com/motion/) — MIT License
+  - @supabase/supabase-js 2 (https://supabase.com) — MIT License
+  - @supabase/ssr — MIT License
+  - openai Node SDK 6 (https://github.com/openai/openai-node) — Apache License 2.0
+  - date-fns 4 (https://date-fns.org) — MIT License
+  - jszip 3 (https://stuk.github.io/jszip/) — MIT License
+    (jszip is dual-licensed "MIT OR GPL-3.0-or-later"; this product uses
+    it under the MIT terms.)
+  - file-saver 2 — MIT License
+  - lucide-react (https://lucide.dev) — ISC License
+  - clsx — MIT License
+  - tailwind-merge — MIT License
+
+Development-time tooling (not distributed with the product):
+
+  - Tailwind CSS 4 — MIT License
+  - ESLint 9 — MIT License
+  - eslint-config-next — MIT License
+  - TypeScript 5 — Apache License 2.0
+
+For details, see package.json and package-lock.json in the repository root.

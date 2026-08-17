@@ -1,3 +1,17 @@
+// Copyright 2026 WXL8000
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /**
  * 轻量级实践意图检测器
  * 使用正则表达式快速扫描笔记内容，识别表达实践意图的语句
@@ -21,7 +35,7 @@ const INTENT_PATTERNS = [
   // 从今天/现在开始类
   /(?:从今天[开始起]|从现在[开始起]|从[今明]天[开始起])[\s,，]*(?:要|开始|坚持|做)/g,
   // 值得一试类
-  /(?:值得[\s,，]*(?:一试|尝试|实践|去做)|可以试试|应该试试)/g,
+  /(?:值得[\s,，]*(?:一试|尝试|实践|去做)|可以试试|应该试试)/g, 
   // 学习应用类
   /(?:学[会到]了?[\s,，]*(?:要|准备|打算|开始)?[\s,，]*(?:用|应用|实践))/g,
   // 想要体验类

@@ -1,3 +1,17 @@
+// Copyright 2026 WXL8000
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
@@ -73,6 +87,11 @@ ${isStart ? '请针对这篇笔记中最核心、最值得挑战的一个观点�
       { role: 'system', content: systemMessage },
       ...messages,
     ];
+
+    // 讯飞 MaaS 要求 messages 中必须包含至少一条 user 消息，否则返回 400
+    if (!apiMessages.some((m) => m.role === 'user')) {
+      apiMessages.push({ role: 'user', content: '请开始。' });
+    }
 
     const response = await client.chat.completions.create({
       model,
